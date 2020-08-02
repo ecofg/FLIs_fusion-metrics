@@ -1,0 +1,2 @@
+1)It is recommended to use ArcGIS geodatabase.
+2)Pay attention to prevent memory overfow during calculation.
