@@ -105,11 +105,13 @@ if __name__ == '__main__':
                 sumg2=0
                 if pig1[g1]==0 or num==1:
                     continue
+                elif num==1:
+                    sumg1+=1
                 else:
                     for g2 in g2class[nums-num:nums]:
                         if pig2[g2]!=0:
                             sumg2+=pig2[g2]*math.log(pig2[g2])
-                sumg1+=1-pig1[g1]*sumg2/math.log(num)
+                    sumg1+=1-pig1[g1]*sumg2/math.log(num)
             dfzero.iat[h + r, l + r] = sumg1
     arrayzero = np.array(dfzero)
     fusionRaster = arcpy.NumPyArrayToRaster(arrayzero, lowerLeft, cellSize)
