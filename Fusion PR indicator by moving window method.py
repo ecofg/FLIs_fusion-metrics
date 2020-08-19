@@ -103,7 +103,7 @@ if __name__ == '__main__':
             for g1,num in zip(g1class,numberlist):
                 nums+=num
                 sumg2=0
-                if pig1[g1]==0 or num==1:
+                if pig1[g1]==0:
                     continue
                 elif num==1:
                     sumg1+=1
