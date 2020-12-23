@@ -1,7 +1,7 @@
-﻿#! python2
+#! python2
 # coding=UTF-8
 '''
-The fusion indicators of NP,PR,SHDI based on Fragstats result.
+The fusion indicators of NP,PD,PR,PRD,SHDI based on Fragstats result.
 First, calculate the corresponding indicators of G1,G2 LULC through Fragstats by moving window method.
 Second, some data needs to be preprocessed according to detailed requirements.
 '''
@@ -13,8 +13,6 @@ import os
 import gc
 import math
 
-
-
 #Input parameters
 outputfile=r""# output geodatabase
 clipFeatures =r""# area boundary
@@ -25,16 +23,17 @@ clipFeatures =r""# area boundary
 arcpy.env.workspace=r""#stored geodatabase
 temporarypath=r""#temporary geodatabase to reduce memory overflow
 
-# classification of LULC
+# classification of LULC, for example:
 g1class = ["1","2","3","4","5","6"]
 g2class = ['11','12','21','22','23','24','31','32','33','41','42','43','44','45','46','51','52','53','61','62','63','64','65','66','67']
-mquantity=[2,4,3,6,3,7]#The number of g2class within the g1class
+mquantity=[2,4,3,6,3,7]#The max-number of g2class inside corresponding firt grade LULC
+A=100 #The area of moving window,according to the actual situation.
 
 #Environment variable
 arcpy.CheckOutExtension("spatial")
 arcpy.env.parallProcessingFactor = "50%"
 arcpy.gp.overwriteOutput = True
-gc.set_threshold(100, 5, 5)
+gc.set_threshold(100, 10, 10)
 arcpy.CreateFileGDB_management(temporarypath,"temporary")
 linshi=os.path.join(temporarypath,"temporary")
 desc = arcpy.Describe(clipFeatures)
@@ -43,7 +42,7 @@ arcpy.env.extent=extent1
 sourceSR = arcpy.Describe(clipFeatures).spatialReference
 arcpy.env.outputCoordinateSystem = sourceSR
 
-def fusionNp(linshi):
+def fusionNP(linshi):
     sum=[]
     for g1 in g1class:
         npg1 = Raster("G1" + "NP_" + g1)
@@ -60,7 +59,7 @@ def fusionNp(linshi):
     del funp,gc.garbage[:]
     gc.collect()
 
-def fusionPr(linshi):
+def fusionPR(linshi):
     sum=[]
     prraster = Raster("G1" + "PR")
     for g1 in g1class:
@@ -78,13 +77,13 @@ def fusionPr(linshi):
     del fupr,prraster,gc.garbage[:]
     gc.collect()
 
-def fusionShdi(linshi):
+def fusionSHDI(linshi):
     sum=[]
     for g1 in g1class:
         g1pland = Raster("G1" + "pland" + "_" + g1)
         weight=Raster(os.path.join(linshi, "wt" + g1))
         shdig1part = -(g1pland / 100) * Ln(g1pland / 100) * (1 + weight)
-        shdig1partpath = os.path.join(linshi, "G1g1class" + "PR" + g1)
+        shdig1partpath = os.path.join(linshi, "G1g1class" + "SHDI" + g1)
         shdig1part.save(shdig1partpath)
         del shdig1part,g1pland
         sum.append(shdig1partpath)
@@ -94,6 +93,42 @@ def fusionShdi(linshi):
                           "NO_MAINTAIN_EXTENT")
     del fushdi,gc.garbage[:]
     gc.collect()
+
+def fusionPD(linshi):
+    sum=[]
+    for g1 in g1class:
+        pdg1 = Raster("G1" + "PD_" + g1)
+        weight=Raster(os.path.join(linshi, "wt" + g1))
+        pdg1part = pdg1 * (1 + weight)/A
+        pdg1partpath = os.path.join(linshi, "G1g1class" + "PD" + g1)
+        pdg1part.save(pdg1partpath)
+        del pdg1part,pdg1
+        sum.append(pdg1partpath)
+    fupd=CellStatistics(sum, "SUM", "DATA")
+    arcpy.Clip_management(fupd, str(extent1), os.path.join(outputfile, "FLI_PD"), clipFeatures, "",
+                          "ClippingGeometry",
+                          "NO_MAINTAIN_EXTENT")
+    del fupd,gc.garbage[:]
+    gc.collect()
+
+def fusionPRD(linshi):
+    sum=[]
+    prraster = Raster("G1" + "PRD")
+    for g1 in g1class:
+        weight=Raster(os.path.join(linshi, "wt" + g1))
+        prdg1=Con(prraster==int(g1),1,0)
+        prdg1part = prdg1 * (1 + weight)/A
+        prdg1partpath = os.path.join(linshi, "G1g1class" + "PRD" + g1)
+        prdg1part.save(prdg1partpath)
+        del prdg1part
+        sum.append(prdg1partpath)
+    fuprd=CellStatistics(sum, "SUM", "DATA")
+    arcpy.Clip_management(fuprd, str(extent1), os.path.join(outputfile, "FLI_PRD"), clipFeatures, "",
+                          "ClippingGeometry",
+                          "NO_MAINTAIN_EXTENT")
+    del fuprd,prraster,gc.garbage[:]
+    gc.collect()
+
 def cleanLinshi(linshi):
     for data in arcpy.ListRasters(linshi):
         arcpy.Delete_management(data)
@@ -121,9 +156,11 @@ for g1, mq in zip(g1class, mquantity):
     weightg1path = os.path.join(linshi, "wt" + g1)
     sumg1tail.save(weightg1path)
 if __name__ == '__main__':
-    fusionNp(linshi)
-    fusionPr(linshi)
-    fusionShdi(linshi)
+    fusionNP(linshi)
+    fusionPD(linshi)
+    fusionPR(linshi)
+    fusionPRD(linshi)
+    fusionSHDI(linshi)
     cleanLinshi(linshi)
 
 
