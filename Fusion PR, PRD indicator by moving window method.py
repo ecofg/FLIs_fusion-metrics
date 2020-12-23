@@ -1,7 +1,7 @@
-﻿#! python2
+#! python2
 # coding=UTF-8
 '''
-The fusion PR indicator  based on G1,G2 LULC
+The fusion PR,PRD indicator  based on G1,G2 LULC
 Moving window method
 '''
 
@@ -18,11 +18,10 @@ from collections import Counter
 #Input parameters
 inputg1path=r""#Target raster path, G1 LULC
 inputg2path=r""# G2 LULC
-outpath=r""#Output result path file(.gdb)
-
-rs=1#resolution
-r =30/rs# moving window radius
-sds=4#four significant digits after the decimal point
+outpathPR=r""#Output result path file
+outpathPRD=r""
+rs=1#resolution (km)
+r =30/rs# The radius of the moving window
 
 #Environment variable
 arcpy.CheckOutExtension("spatial")
@@ -43,8 +42,9 @@ gc.set_threshold(100, 5, 5)
 dfno = pd.DataFrame(index=range(2 * r + 1), columns=range(2 * r + 1))
 for i in range(2 * r + 1):
     for n in range(2 * r + 1):
-        if pow(r - i, 2) + pow(r - n, 2) <= pow(r, 2):  # 圆形
+        if pow(r - i, 2) + pow(r - n, 2) <= pow(r, 2):
             dfno.iat[i, n] = 1
+
 def className(input):
     numarr=arcpy.RasterToNumPyArray(Raster(input))
     dic=Counter(numarr.flatten().tolist())
@@ -84,10 +84,9 @@ if __name__ == '__main__':
     dflower=pd.DataFrame(arcpy.RasterToNumPyArray(Raster(inputg2path)))
     del numraster,inRas,gc.garbage[:]
     gc.collect()
-    hang = dfraster.shape[0]  # 行数
-    lie = dfraster.shape[1]  # 列数
+    hang = dfraster.shape[0]
+    lie = dfraster.shape[1]
     dfzero = pd.DataFrame(np.zeros((hang, lie)))
-    # 创建圆形移动窗口
     n = 0
     for l in range(lie - 2 * r):
         print("The progress rate is %3f" % (float(l) / (lie - 2 * r)))
@@ -116,5 +115,11 @@ if __name__ == '__main__':
     arrayzero = np.array(dfzero)
     fusionRaster = arcpy.NumPyArrayToRaster(arrayzero, lowerLeft, cellSize)
     arcpy.DefineProjection_management(fusionRaster, sourceSR)
-    fusionRaster.save(outpath)
-    print ("FLI_PR is ok")
+    fusionRaster.save(outpathPR)
+    cnum = dfno[-np.isnan(dfno)].tolist
+    A = math.sqrt(rs) * cnum
+    FLI_PRD=fusionRaster/A
+    FLI_PRD.save(outpathPRD)
+    print ("saving is ok")
+    del gc.garbage[:]
+    gc.collect()
