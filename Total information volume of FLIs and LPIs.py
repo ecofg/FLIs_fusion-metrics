@@ -127,7 +127,9 @@ if __name__ == '__main__':
         sum = 0
         for item in chars_codes:
             sum += item[0][1] * len(item[1])
-        xinxiliang += int(math.pow(0.5, wei) / (1 - math.pow(0.5, weishu[-1])) * sum)  # 总信息量,为了加快运算取整。
-    print("The total information volume of ** is %f Mbit"%xinxiliang)
+        xinxiliang += int(math.pow(0.5, wei) / (1 - math.pow(0.5, weishu[-1])) * sum)
+    del arrready, gc.garbage[:]
+    information_mb=float(xinxiliang)/(1024*1024)
+    print("The total information volume of ** is %f Mbits"%information_mb)
 
 
