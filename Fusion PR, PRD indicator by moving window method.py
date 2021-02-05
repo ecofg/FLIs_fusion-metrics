@@ -1,7 +1,7 @@
 #! python2
 # coding=UTF-8
 '''
-The fusion PR,PRD indicator  based on G1,G2 LULC
+The fusion PR indicator  based on G1,G2 LULC
 Moving window method
 '''
 
@@ -116,10 +116,6 @@ if __name__ == '__main__':
     fusionRaster = arcpy.NumPyArrayToRaster(arrayzero, lowerLeft, cellSize)
     arcpy.DefineProjection_management(fusionRaster, sourceSR)
     fusionRaster.save(outpathPR)
-    cnum = dfno[-np.isnan(dfno)].tolist
-    A = math.sqrt(rs) * cnum
-    FLI_PRD=fusionRaster/A
-    FLI_PRD.save(outpathPRD)
-    print ("saving is ok")
+    print ("FLI-PR is ok")
     del gc.garbage[:]
     gc.collect()
