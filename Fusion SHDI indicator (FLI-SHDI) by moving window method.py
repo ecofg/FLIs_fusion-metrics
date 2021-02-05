@@ -116,4 +116,4 @@ if __name__ == '__main__':
     fusionRaster = arcpy.NumPyArrayToRaster(arrayzero, lowerLeft, cellSize)
     arcpy.DefineProjection_management(fusionRaster, sourceSR)
     fusionRaster.save(outpath)
-    print ("FLI_SHDI is ok")
+    print ("FLI-SHDI is ok")
